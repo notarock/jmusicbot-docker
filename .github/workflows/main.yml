@@ -16,9 +16,13 @@ env:
   PACKAGE_NAME: "${{ github.event.repository.name }}"
 
 
+
 jobs:
   check-version:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     outputs:
       release_tag: ${{ steps.release_version.outputs.tag }}
       image_tag: ${{ steps.image_version.outputs.tag }}
@@ -26,7 +30,7 @@ jobs:
       - name: Authenticate to GitHub CLI
         run: gh auth login --with-token <<< "${{ github.token }}"
 
-      - name: Get remote musicbot version
+      - name: Get remote jagrosh/musicbot version
         id: release_version
         run: |
           echo "Fetching most recent version from the release in ${{ env.FULL_REPO }}"
@@ -35,14 +39,21 @@ jobs:
           echo "Latest release: $LATEST_RELEASE"
           echo "tag=$LATEST_RELEASE" >> "$GITHUB_OUTPUT"
 
-      - name: Get remote musicbot version
+      - name: Get repository registry musicbot version
         id: image_version
         run: |
-          echo "Fetching most recent version of the docker image at ${{ github.repository_owner }}/${{ github.repository }}"
+          set -x
+
+          echo "Fetching most recent version of the docker image at ${{ github.repository_owner }}/${{ env.PACKAGE_NAME }}"
+
+          gh api \
+            -H "Accept: application/vnd.github.v3+json" \
+            /users/${{ github.repository_owner }}/packages/container/${{ env.PACKAGE_NAME }}/versions \
+            --jq '.[0].metadata.container.tags[0]' 2>/dev/null
           
           if ! tag=$(gh api \
             -H "Accept: application/vnd.github.v3+json" \
-            /repos/${{ github.repository_owner }}/packages/container/${{ env.PACKAGE_NAME }}/versions \
+            /users/${{ github.repository_owner }}/packages/container/${{ env.PACKAGE_NAME }}/versions \
             --jq '.[0].metadata.container.tags[0]' 2>/dev/null); then
             echo "No image versions found (possibly first push)."
             tag="none"
@@ -61,6 +72,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: check-version
     if: needs.check-version.outputs.image_tag != needs.check-version.outputs.release_tag
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout Dockerfile
         id: checkout
@@ -95,4 +109,4 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64/v8
           push: true
-          tags: ${{ github.repository_owner }}/${{ env.PACKAGE_NAME }}:${{ needs.check-version.outputs.release_tag }}
+          tags: ghcr.io/${{ github.repository_owner }}/${{ env.PACKAGE_NAME }}:${{ needs.check-version.outputs.release_tag }}
