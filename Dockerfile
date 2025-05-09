@@ -1,15 +1,9 @@
-FROM cycloid/github-cli AS downloader
-WORKDIR /app
-ARG GH_TOKEN
-ARG BOT_VERSION
-
-RUN GH_TOKEN=$GH_TOKEN gh release download \
-    --pattern "JMusicBot-$BOT_VERSION.jar" \
-    --repo jagrosh/MusicBot
-
-RUN mv JMusicBot-$BOT_VERSION.jar JMusicBot.jar
-
 FROM eclipse-temurin:11-jre-focal
-COPY --from=downloader /app/JMusicBot.jar /app/JMusicBot.jar
+
 WORKDIR /app
+# The jar file is not included in the repository, so we need to copy it from the host
+# The jar file is downloaded from the GitHub release page by the GitHub Actions workflow
+# It is a pre-built jar file, so we don't need to build it ourselves
+COPY ./JMusicBot.jar ./JMusicBot.jar
+
 ENTRYPOINT ["java", "-Dconfig=/app/config.txt", "-Dnogui=true", "-jar", "/app/JMusicBot.jar"]

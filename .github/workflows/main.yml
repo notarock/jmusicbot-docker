@@ -13,7 +13,7 @@ env:
   OWNER: "jagrosh"
   REPOSITORY: "MusicBot"
   FULL_REPO: "jagrosh/MusicBot"
-  PACKAGE_NAME: "jmusicbot"
+  PACKAGE_NAME: "${{ github.event.repository.name }}"
 
 
 jobs:
@@ -39,7 +39,7 @@ jobs:
         id: image_version
         run: |
           echo "Fetching most recent version of the docker image at ${{ github.repository_owner }}/${{ github.repository }}"
-    
+          
           if ! tag=$(gh api \
             -H "Accept: application/vnd.github.v3+json" \
             /repos/${{ github.repository_owner }}/packages/container/${{ env.PACKAGE_NAME }}/versions \
@@ -76,6 +76,16 @@ jobs:
           registry: 'ghcr.io'
           username: ${{ github.repository_owner }}
           password: ${{ github.token }}
+          
+      - name: Download JMusicBot jar ${{ needs.check-version.outputs.release_tag }}
+        run: |
+          gh release download ${{ needs.check-version.outputs.release_tag }} \
+            --repo jagrosh/MusicBot \
+            --pattern "JMusicBot-${{ needs.check-version.outputs.release_tag }}.jar" \
+
+          mv "JMusicBot-${{ needs.check-version.outputs.release_tag }}.jar" JMusicBot.jar
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Build and push Docker image
         id: build
@@ -86,6 +96,3 @@ jobs:
           platforms: linux/amd64,linux/arm64/v8
           push: true
           tags: ${{ github.repository_owner }}/${{ env.PACKAGE_NAME }}:${{ needs.check-version.outputs.release_tag }}
-          build-args: |
-            BOT_VERSION=${{ needs.check-version.outputs.release_tag }}
-            GH_TOKEN=${{ secrets.GITHUB_TOKEN }}
