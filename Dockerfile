@@ -1,9 +1,13 @@
-FROM cycloid/github-cli as downloader
-ARG GH_TOKEN
-ENV GH_TOKEN=$GH_TOKEN
+FROM cycloid/github-cli AS downloader
 WORKDIR /app
-RUN gh release download --pattern "JMusicBot-*.jar" --repo jagrosh/MusicBot
-RUN mv JMusicBot-*.jar JMusicBot.jar
+ARG GH_TOKEN
+ARG BOT_VERSION
+
+RUN GH_TOKEN=$GH_TOKEN gh release download \
+    --pattern "JMusicBot-$BOT_VERSION.jar" \
+    --repo jagrosh/MusicBot
+
+RUN mv JMusicBot-$BOT_VERSION.jar JMusicBot.jar
 
 FROM eclipse-temurin:11-jre-focal
 COPY --from=downloader /app/JMusicBot.jar /app/JMusicBot.jar
