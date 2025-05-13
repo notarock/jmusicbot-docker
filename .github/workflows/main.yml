@@ -49,7 +49,7 @@ jobs:
           if ! tag=$(gh api \
             -H "Accept: application/vnd.github.v3+json" \
             /users/${{ github.repository_owner }}/packages/container/${{ env.PACKAGE_NAME }}/versions \
-            --jq '.[0].metadata.container.tags[0]' 2>/dev/null); then
+            --jq '.[0].metadata.container.tags[1]' 2>/dev/null); then
             echo "No image versions found (possibly first push)."
             tag="none"
           fi
