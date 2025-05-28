@@ -6,4 +6,7 @@ WORKDIR /app
 # It is a pre-built jar file, so we don't need to build it ourselves
 COPY ./JMusicBot.jar ./JMusicBot.jar
 
-ENTRYPOINT ["java", "-Dconfig=/app/config.txt", "-Dnogui=true", "-jar", "/app/JMusicBot.jar"]
+# Define an environment variable with a default value
+ENV CONFIG_PATH=/app/config.txt
+
+ENTRYPOINT ["sh", "-c", "java -Dconfig=$CONFIG_PATH -Dnogui=true -jar /app/JMusicBot.jar"]
