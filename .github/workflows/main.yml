@@ -1,4 +1,4 @@
-name: Automated Docker Build and Push
+name: Check for new versions to publish
 
 on:
   push:
